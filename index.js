@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 var config = {
-    sourceDir: 'sample',
-    destDir: 'ordered',
+    sourceDir: process.argv[2] || 'sample',
+    destDir: process.argv[3] || 'ordered',
+    deleteSource: process.argv.indexOf('-d') !== -1,
 }
 
 function processDir(dir) {
@@ -23,14 +24,33 @@ function processDir(dir) {
             }
             
             fs.copyFileSync(path.join(__dirname, dir, file.name), path.join(__dirname, config.destDir, letter, file.name));
+            
+            if (config.deleteSource) {
+                fs.unlinkSync(path.join(__dirname, dir, file.name));
+            }
         }
     });
+    
+    if (config.deleteSource) {
+        fs.rmdirSync(path.join(__dirname, dir));
+    }
 }
 
 if (!fs.existsSync(config.destDir)) {
     fs.mkdirSync(config.destDir);
 }
 
+if (!fs.existsSync(config.sourceDir)) {
+    console.log('No such source folder: ', config.sourceDir);
+    return;
+}
+
+console.log('Ordering files from ', config.sourceDir, 'into', config.destDir, '. Will remove source folder:', config.deleteSource);
+
 processDir(config.sourceDir);
+
+console.log('Processing files done.');
+
+
 
 
