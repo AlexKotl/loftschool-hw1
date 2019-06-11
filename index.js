@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
 var config = {
   sourceDir: process.argv[2] || 'sample',
@@ -7,8 +8,15 @@ var config = {
   deleteSource: process.argv.indexOf('-d') !== -1
 };
 
-function processDir (dir) {
-  fs.readdirSync(path.join(__dirname, dir), { withFileTypes: true }).forEach(function (file) {
+copyFile = util.promisify(fs.copyFile);
+readdir = util.promisify(fs.readdir);
+exists = util.promisify(fs.exists);
+mkdir = util.promisify(fs.mkdir);
+unlink = util.promisify(fs.unlink);
+
+async function processDir (dir) {
+  const dirContent = await readdir(path.join(__dirname, dir), { withFileTypes: true });
+  dirContent.forEach(async function (file) {
     if (file.isDirectory()) {
       processDir(path.join(dir, file.name));
     } else {
@@ -22,7 +30,8 @@ function processDir (dir) {
         fs.mkdirSync(path.join(__dirname, config.destDir, letter));
       }
 
-      fs.copyFileSync(path.join(__dirname, dir, file.name), path.join(__dirname, config.destDir, letter, file.name));
+      console.log(' - copying file', file.name);
+      copyFile(path.join(__dirname, dir, file.name), path.join(__dirname, config.destDir, letter, file.name));
 
       if (config.deleteSource) {
         fs.unlinkSync(path.join(__dirname, dir, file.name));
