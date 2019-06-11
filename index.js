@@ -8,13 +8,14 @@ var config = {
   deleteSource: process.argv.indexOf('-d') !== -1
 };
 
-copyFile = util.promisify(fs.copyFile);
-readdir = util.promisify(fs.readdir);
-exists = util.promisify(fs.exists);
-mkdir = util.promisify(fs.mkdir);
-unlink = util.promisify(fs.unlink);
+const copyFile = util.promisify(fs.copyFile);
+const readdir = util.promisify(fs.readdir);
+const exists = util.promisify(fs.exists);
+const mkdir = util.promisify(fs.mkdir);
+const rmdir = util.promisify(fs.rmdir);
+const unlink = util.promisify(fs.unlink);
 
-processDir = async (dir) => {
+const processDir = async (dir) => {
   const dirContent = await readdir(path.join(__dirname, dir), { withFileTypes: true });
   dirContent.forEach(async function (file) {
     if (file.isDirectory()) {
@@ -30,11 +31,9 @@ processDir = async (dir) => {
       if (!folderExists) {
         try {
           await mkdir(path.join(__dirname, config.destDir, letter));
-        }
-        catch (error) {
+        } catch (error) {
           // skip error
         }
-        
       }
 
       console.log(' - copying file', file.name);
@@ -49,7 +48,7 @@ processDir = async (dir) => {
   if (config.deleteSource) {
     await rmdir(path.join(__dirname, dir));
   }
-}
+};
 
 console.log('Ordering files from ', config.sourceDir, 'into', config.destDir, '. Will remove source folder:', config.deleteSource);
 
@@ -58,12 +57,12 @@ const app = async () => {
   if (!isExists) {
     await mkdir(config.destDir);
   }
-  
+
   const sourceFolderExists = await exists(config.sourceDir);
   if (!sourceFolderExists) {
     console.log('No such source folder: ', config.sourceDir);
     process.exit(1);
-  } 
+  }
 
   await processDir(config.sourceDir);
 };
