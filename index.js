@@ -10,7 +10,7 @@ var config = {
 
 const copyFile = util.promisify(fs.copyFile);
 const readdir = util.promisify(fs.readdir);
-const exists = util.promisify(fs.exists);
+const access = util.promisify(fs.access);
 const mkdir = util.promisify(fs.mkdir);
 const rmdir = util.promisify(fs.rmdir);
 const unlink = util.promisify(fs.unlink);
@@ -27,8 +27,9 @@ const processDir = async (dir) => {
       }
 
       // create letter dir
-      const folderExists = await exists(path.join(__dirname, config.destDir, letter));
-      if (!folderExists) {
+      try {
+        await access(path.join(__dirname, config.destDir, letter));
+      } catch (err) {
         try {
           await mkdir(path.join(__dirname, config.destDir, letter));
         } catch (error) {
@@ -53,13 +54,15 @@ const processDir = async (dir) => {
 console.log('Ordering files from ', config.sourceDir, 'into', config.destDir, '. Will remove source folder:', config.deleteSource);
 
 const app = async () => {
-  const isExists = await exists(config.destDir);
-  if (!isExists) {
+  try {
+    const isExists = await access(config.destDir);
+  } catch (err) {
     await mkdir(config.destDir);
   }
 
-  const sourceFolderExists = await exists(config.sourceDir);
-  if (!sourceFolderExists) {
+  try {
+    await access(config.sourceDir);
+  } catch (err) {
     console.log('No such source folder: ', config.sourceDir);
     process.exit(1);
   }
